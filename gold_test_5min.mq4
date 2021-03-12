@@ -143,7 +143,7 @@ void OnTick()
             }
         }
     }else {
-      if((bar - temp_bar) > 0 ){
+      if((bar - temp_bar) > 0){
         if(OrderSelect(0, SELECT_BY_POS)==true){
             if(OrderProfit() < -stop_loss*Point){
                if(OrderClose(OrderTicket(),OrderLots(),OrderClosePrice(),slippage,clrNONE)){
