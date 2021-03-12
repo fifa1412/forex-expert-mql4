@@ -61,9 +61,11 @@ double high_price_s1;
 double close_price_s0;
 double low_price_s0;
 double high_price_s0;
-bool is_print = true;
-int print_bar;
 
+bool is_ordering = false; 
+bool is_close_order = false;
+int cmd;
+double price;
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
@@ -115,86 +117,66 @@ void OnTick()
          if(close_price_s0 < ema200_s0 && ema200_s0 - close_price_s0 < 100*Point){
             // Under
             if(adx_minus_s0 > 25 && adx_main_s0 > 15 && adx_plus_s0 < adx_plus_s1 && adx_minus_s0 > adx_plus_s0){
-                  //Open order
-                  order_ticket = OrderSend(symbol,OP_SELL,lots,NormalizeDouble(Bid,(int)MarketInfo(symbol,MODE_DIGITS)),slippage,0,0,comment,0,0,clrNONE);
-                  if(order_ticket > 0){
-                     is_ordered = true;    
-                     temp_bar = Bars;
-                     printf("Open Order SUCCESS (Ticket: "+(string)order_ticket+")");
-                  }else{
-                     printf("Open Order FAILED " + (string)GetLastError());
-                  }
+               is_ordering = true;
+               cmd = OP_SELL;
+               price = Bid;
             }else if((adx_minus_s0 > 15 && adx_main_s0 > 15 && adx_plus_s0 < 25) && (stoch_signal_s0 > stoch_main_s0 && 75 < stoch_main_s0 && stoch_main_s0 < 90 && 75 < stoch_signal_s0 && stoch_signal_s0 < 90)){
-                  //Open order
-                  order_ticket = OrderSend(symbol,OP_SELL,lots,NormalizeDouble(Bid,(int)MarketInfo(symbol,MODE_DIGITS)),slippage,0,0,comment,0,0,clrNONE);
-                  if(order_ticket > 0){
-                     is_ordered = true;
-                     temp_bar = Bars;
-                     printf("Open Order SUCCESS (Ticket: "+(string)order_ticket+")");
-                  }else{
-                     printf("Open Order FAILED " + (string)GetLastError());
-                  }       
+               is_ordering = true;
+               cmd = OP_SELL; 
+               price = Bid;  
             } 
          }else if(close_price_s0 > ema200_s0 && close_price_s0 - ema200_s0 < 100*Point){
             // Above
             if((adx_plus_s0 > 25 && adx_main_s0 > 15 && adx_minus_s0 < adx_minus_s1 && adx_plus_s0 > adx_minus_s0)){
-            printf("stoch_main_s0 : " + (string)stoch_main_s0 + " stoch_signal_s0: " + (string)stoch_signal_s0);
-               printf("adx_minus_s0 : " + (string)adx_minus_s0 + " adx_main_s0: " + (string)adx_main_s0 + " adx_plus_s0 : " + (string)adx_plus_s0 );
-                  //Open order
-                  order_ticket = OrderSend(symbol,OP_BUY,lots,NormalizeDouble(Ask,(int)MarketInfo(symbol,MODE_DIGITS)),slippage,0,0,comment,0,0,clrNONE);
-                  if(order_ticket > 0){
-                     is_ordered = true;
-                     temp_bar = Bars;
-                     printf("Open Order SUCCESS (Ticket: "+(string)order_ticket+")");
-                  }else{
-                     printf("Open Order FAILED " + (string)GetLastError());
-                  }
+               is_ordering = true;
+               cmd = OP_BUY;
+               price = Ask; 
             }else if((adx_plus_s0 > 15 && adx_main_s0 > 15 && adx_minus_s0 < 25)&& (stoch_signal_s0 < stoch_main_s0 && 10 < stoch_main_s0 && stoch_main_s0 < 25 && 10 < stoch_signal_s0 && stoch_signal_s0 < 25)){
-                  printf("stoch_main_s0 : " + (string)stoch_main_s0 + " stoch_signal_s0: " + (string)stoch_signal_s0);
-               printf("adx_minus_s0 : " + (string)adx_minus_s0 + " adx_main_s0: " + (string)adx_main_s0 + " adx_plus_s0 : " + (string)adx_plus_s0 );
-                  //Open order
-                  order_ticket = OrderSend(symbol,OP_BUY,lots,NormalizeDouble(Ask,(int)MarketInfo(symbol,MODE_DIGITS)),slippage,0,0,comment,0,0,clrNONE);
-                  if(order_ticket > 0){
-                     is_ordered = true;
-                     temp_bar = Bars;
-                     printf("Open Order SUCCESS (Ticket: "+(string)order_ticket+")");
-                  }else{
-                     printf("Open Order FAILED " + (string)GetLastError());
-                  }
+               is_ordering = true;
+               cmd = OP_BUY;
+               price = Ask;
             }
          }
       }
+      if(is_ordering){
+         order_ticket = OrderSend(symbol,cmd,lots,NormalizeDouble(price,(int)MarketInfo(symbol,MODE_DIGITS)),slippage,0,0,comment,0,0,clrNONE);
+         if(order_ticket > 0){
+            is_ordered = true;
+            temp_bar = Bars;
+            printf("Open Order SUCCESS (Ticket: "+(string)order_ticket+")");
+         }else{
+            printf("Open Order FAILED " + (string)GetLastError());
+         }
+         is_ordering = false;
+      }
    }else{
-   // Check for close order
+      // Check for close order
       if((bar - temp_bar) > 0 ){
-            if(OrderSelect(0, SELECT_BY_POS)==true){
-               if ((OrderType() == OP_BUY && close_price_s0 < ema200_s0)){
-                  if(is_init){
-                     if(OrderClose(OrderTicket(),OrderLots(),OrderClosePrice(),slippage,clrNONE)){
-                        printf("Close Order SUCCESS (Ticket: "+(string)OrderTicket()+")");
-                        is_ordered = false;
-                        is_init = false;
-                     }else{
-                        printf("Close Order FAILED " + (string)GetLastError());
-                     }          
-                  }else if(!((adx_plus_s1 > 15 && adx_main_s1 > 15 && adx_plus_s1 > adx_minus_s1) && (low_price_s1 < ema200_s1 && high_price_s1 > ema200_s1))){
-                     is_init = true;
-                  }
-                          
-               }else if(OrderType() == OP_SELL && close_price_s0 > ema200_s0){
-                  if(is_init){
-                     if(OrderClose(OrderTicket(),OrderLots(),OrderClosePrice(),slippage,clrNONE)){
-                        printf("Close Order SUCCESS (Ticket: "+(string)OrderTicket()+")");
-                        is_ordered = false;
-                        is_init = false;
-                     }else{
-                        printf("Close Order FAILED " + (string)GetLastError());
-                     }          
-                  }else if(!((adx_minus_s0 > 15 && adx_main_s0 > 15 && adx_minus_s0 > adx_plus_s0) && (low_price_s1 < ema200_s1 && high_price_s1 > ema200_s1))){
-                     is_init = true;
-                  }
+         if(OrderSelect(0, SELECT_BY_POS)==true){
+            if ((OrderType() == OP_BUY && close_price_s0 < ema200_s0)){
+               if(is_init){
+                  is_close_order = true;         
+               }else if(!((adx_plus_s1 > 15 && adx_main_s1 > 15 && adx_plus_s1 > adx_minus_s1) && (low_price_s1 < ema200_s1 && high_price_s1 > ema200_s1))){
+                  is_init = true;
+               }      
+            }else if(OrderType() == OP_SELL && close_price_s0 > ema200_s0){
+               if(is_init){
+                  is_close_order = true;   
+               }else if(!((adx_minus_s0 > 15 && adx_main_s0 > 15 && adx_minus_s0 > adx_plus_s0) && (low_price_s1 < ema200_s1 && high_price_s1 > ema200_s1))){
+                  is_init = true;
                }
             }
+            if(is_close_order){
+               if(OrderClose(OrderTicket(),OrderLots(),OrderClosePrice(),slippage,clrNONE)){
+                  printf("Close Order SUCCESS (Ticket: "+(string)OrderTicket()+")");
+                  is_ordered = false;
+                  is_init = false;
+                  is_close_order = false;
+               }else{
+                  printf("Close Order FAILED " + (string)GetLastError());
+               }
+            }
+         }
       }
    }
   }
