@@ -35,13 +35,6 @@ int slowing = 3; // slowing
 int method = MODE_SMA; // Simple averaging
 int price_field = 0; // price (0 -> Low/High or 1 -> Close/Close)
 
-bool is_init = false;
-bool is_above = false;
-bool is_under = false;
-bool is_ordered = false;
-int temp_bar;
-int bar;
-
 double adx_main_s0;
 double adx_plus_s0;
 double adx_minus_s0;
@@ -53,30 +46,29 @@ double stoch_main_s0;
 double stoch_signal_s0;
 
 double ema200_s0;
-double ema200_s1 = iMA(symbol,timeframe,200,ma_shift,ma_method,ma_applied_price,shift+1);
+double ema200_s1;
 
-double close_price_s1 = iClose(symbol,timeframe,shift+1);
+double close_price_s1;
 double low_price_s1;
 double high_price_s1;
 double close_price_s0;
 double low_price_s0;
 double high_price_s0;
 
+bool is_init = false;
+bool is_ordered = false;
 bool is_ordering = false; 
 bool is_close_order = false;
 int cmd;
 double price;
+int temp_bar;
+int bar;
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
 int OnInit()
   {
 //---
-   if(close_price_s1 > ema200_s1){
-      is_above = true;
-   }else{
-      is_under = true;
-   }
 //---
    return(INIT_SUCCEEDED);
   }
